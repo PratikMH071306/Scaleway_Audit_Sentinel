@@ -1,6 +1,7 @@
 package com.secure_monitor.scaleway;
 
 import com.secure_monitor.domain.SecurityEvent;
+import com.secure_monitor.domain.SecurityEventEntity;
 import com.secure_monitor.scaleway.dto.AuditEventDto;
 import com.secure_monitor.scaleway.dto.ResourceDto;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,22 @@ public class ScalewayEventMapper {
                 action(event),
                 resource(event.resources()),
                 status(event.statusCode())
+        );
+    }
+
+    public SecurityEventEntity toEntity(AuditEventDto event) {
+        return new SecurityEventEntity(
+                event.id(),
+                event.recordedAt(),
+                event.locality(),
+                event.organizationId(),
+                event.sourceIp(),
+                event.userAgent(),
+                event.productName(),
+                event.serviceName(),
+                event.methodName(),
+                event.requestId(),
+                event.statusCode()
         );
     }
 

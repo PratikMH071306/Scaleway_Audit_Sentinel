@@ -1,6 +1,7 @@
 package com.secure_monitor.scaleway;
 
 import com.secure_monitor.domain.SecurityEvent;
+import com.secure_monitor.domain.SecurityEventEntity;
 import com.secure_monitor.scaleway.dto.AuditEventDto;
 import com.secure_monitor.scaleway.dto.PrincipalDto;
 import com.secure_monitor.scaleway.dto.ResourceDto;
@@ -132,6 +133,41 @@ class ScalewayEventMapperTest {
         ));
 
         assertThat(mapped.status()).isEqualTo(expectedStatus);
+    }
+
+    @Test
+    void mapsAuditEventToEntity() {
+        Instant recordedAt = Instant.parse("2026-09-27T12:00:00Z");
+        AuditEventDto event = new AuditEventDto(
+                "evt-1",
+                recordedAt,
+                "fr-par",
+                new PrincipalDto("user-42"),
+                "org-1",
+                "203.0.113.10",
+                "scaleway-cli",
+                "instance",
+                "instance",
+                "CreateServer",
+                "req-9",
+                null,
+                201,
+                List.of(resource("srv-1", "instance_server", "web"))
+        );
+
+        SecurityEventEntity entity = mapper.toEntity(event);
+
+        assertThat(entity.getEventId()).isEqualTo("evt-1");
+        assertThat(entity.getRecordedAt()).isEqualTo(recordedAt);
+        assertThat(entity.getLocality()).isEqualTo("fr-par");
+        assertThat(entity.getOrganizationId()).isEqualTo("org-1");
+        assertThat(entity.getSourceIp()).isEqualTo("203.0.113.10");
+        assertThat(entity.getUserAgent()).isEqualTo("scaleway-cli");
+        assertThat(entity.getProductName()).isEqualTo("instance");
+        assertThat(entity.getServiceName()).isEqualTo("instance");
+        assertThat(entity.getMethodName()).isEqualTo("CreateServer");
+        assertThat(entity.getRequestId()).isEqualTo("req-9");
+        assertThat(entity.getStatusCode()).isEqualTo(201);
     }
 
     private static AuditEventDto event(

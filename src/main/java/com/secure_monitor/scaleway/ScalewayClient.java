@@ -4,6 +4,10 @@ import com.secure_monitor.scaleway.dto.AuditEventsResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URI;
+import java.time.Instant;
 
 @Slf4j
 @Component
@@ -33,11 +37,7 @@ public class ScalewayClient {
 
     public AuditEventsResponse getEvents() {
         AuditEventsResponse response = restClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/audit-trail/v1alpha1/regions/{region}/events")
-                        .queryParam("organization_id", config.organizationId())
-                        .build(config.region())
-                )
+                .uri(eventsUri(config, Instant.now()).toString())
                 .retrieve()
                 .body(AuditEventsResponse.class);
 
@@ -47,5 +47,15 @@ public class ScalewayClient {
         log.info("Fetched {} events from Scaleway region {}", eventCount, config.region());
 
         return response;
+    }
+
+    static URI eventsUri(ScalewayConfig config, Instant now) {
+        Instant recordedAfter = now.minus(config.eventLookback());
+        return UriComponentsBuilder
+                .fromPath("/audit-trail/v1alpha1/regions/{region}/events")
+                .queryParam("organization_id", config.organizationId())
+                .queryParam("recorded_after", recordedAfter)
+                .queryParam("page_size", 100)
+                .build(config.region());
     }
 }

@@ -6,8 +6,6 @@ import jakarta.persistence.Table;
 
 import java.time.Instant;
 
-
-
 @Entity
 @Table(name = "security_events")
 public class SecurityEventEntity {
@@ -35,5 +33,76 @@ public class SecurityEventEntity {
 
     private int statusCode;
 
-    // resources/raw payload later
+    protected SecurityEventEntity() {
+    }
+
+    public SecurityEventEntity(
+            String eventId,
+            Instant recordedAt,
+            String locality,
+            String organizationId,
+            String sourceIp,
+            String userAgent,
+            String productName,
+            String serviceName,
+            String methodName,
+            String requestId,
+            int statusCode
+    ) {
+        this.eventId = eventId;
+        this.recordedAt = recordedAt;
+        this.locality = locality;
+        this.organizationId = organizationId;
+        this.sourceIp = sourceIp;
+        this.userAgent = userAgent;
+        this.productName = productName;
+        this.serviceName = serviceName;
+        this.methodName = methodName;
+        this.requestId = requestId;
+        this.statusCode = statusCode;
+    }
+
+    public String getEventId() {
+        return eventId;
+    }
+
+    public Instant getRecordedAt() {
+        return recordedAt;
+    }
+
+    public String getLocality() {
+        return locality;
+    }
+
+    public String getOrganizationId() {
+        return organizationId;
+    }
+
+    public String getSourceIp() {
+        return sourceIp;
+    }
+
+    public String getUserAgent() {
+        return userAgent;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public String getMethodName() {
+        return methodName;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public int getStatusCode() {
+        return statusCode;
+    }
 }
