@@ -3,7 +3,9 @@ package com.secure_monitor.controller;
 
 import com.secure_monitor.scaleway.ScalewayService;
 import com.secure_monitor.scaleway.dto.AuditEventsResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,5 +22,11 @@ public class ScalewayController {
     @GetMapping("/events")
     public AuditEventsResponse getEvents() {
         return service.getAuditEvents();
+    }
+
+    @PostMapping("/events/sync")
+    public ResponseEntity<Void> syncEvents() {
+        service.syncEvents();
+        return ResponseEntity.noContent().build();
     }
 }
