@@ -12,6 +12,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -150,7 +151,7 @@ class ScalewayEventMapperTest {
                 "instance",
                 "CreateServer",
                 "req-9",
-                null,
+                Map.of("name", "web"),
                 201,
                 List.of(resource("srv-1", "instance_server", "web"))
         );
@@ -167,6 +168,7 @@ class ScalewayEventMapperTest {
         assertThat(entity.getServiceName()).isEqualTo("instance");
         assertThat(entity.getMethodName()).isEqualTo("CreateServer");
         assertThat(entity.getRequestId()).isEqualTo("req-9");
+        assertThat(entity.getRequestBody()).isEqualTo(Map.of("name", "web"));
         assertThat(entity.getStatusCode()).isEqualTo(201);
     }
 

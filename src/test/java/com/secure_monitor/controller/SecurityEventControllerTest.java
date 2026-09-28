@@ -38,6 +38,7 @@ class SecurityEventControllerTest {
                 "instance",
                 "CreateServer",
                 "req-9",
+                null,
                 201
         );
         when(repository.findAll(any(Sort.class))).thenReturn(List.of(entity));

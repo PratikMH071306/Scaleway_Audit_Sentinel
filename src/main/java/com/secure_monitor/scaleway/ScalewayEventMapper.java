@@ -37,6 +37,7 @@ public class ScalewayEventMapper {
                 event.serviceName(),
                 event.methodName(),
                 event.requestId(),
+                event.requestBody(),
                 event.statusCode()
         );
     }
