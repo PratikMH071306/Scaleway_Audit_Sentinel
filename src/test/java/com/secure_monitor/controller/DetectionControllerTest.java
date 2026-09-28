@@ -10,6 +10,7 @@ import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
@@ -25,20 +26,25 @@ class DetectionControllerTest {
 
     @Test
     void returnsADetectionWhenTheRuleMatches() throws Exception {
+        Instant detectedAt = Instant.parse("2026-09-28T10:30:00Z");
         when(detectionService.detectFailedAuthentication()).thenReturn(List.of(
                 new DetectionResult(
                         true,
                         "FAILED_AUTHENTICATION_SPIKE",
                         "5 failed authentication attempts detected within 5 minutes",
                         5,
-                        "122.167.118.87"
+                        "122.167.118.87",
+                        detectedAt,
+                        List.of("auth-1", "auth-2", "auth-3", "auth-4", "auth-5")
                 ),
                 new DetectionResult(
                         true,
                         "FAILED_AUTHENTICATION_SPIKE",
                         "5 failed authentication attempts detected within 5 minutes",
                         5,
-                        "122.167.118.89"
+                        "122.167.118.89",
+                        detectedAt,
+                        List.of("auth-6", "auth-7", "auth-8", "auth-9", "auth-10")
                 )
         ));
 
@@ -60,7 +66,9 @@ class DetectionControllerTest {
                 "FAILED_AUTHENTICATION_SPIKE",
                 null,
                 2,
-                "122.167.118.87"
+                "122.167.118.87",
+                Instant.parse("2026-09-28T10:30:00Z"),
+                List.of("auth-1", "auth-2")
         )));
 
         mockMvc().perform(get("/api/detection/failed-authentication"))

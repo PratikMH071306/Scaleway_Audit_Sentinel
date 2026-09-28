@@ -35,7 +35,9 @@ class FailedAuthenticationRuleTest {
                 "FAILED_AUTHENTICATION_SPIKE",
                 "5 failed authentication attempts detected within 5 minutes",
                 5,
-                "122.167.118.87"
+                "122.167.118.87",
+                start.plusSeconds(4 * 60L),
+                List.of("auth-0", "auth-1", "auth-2", "auth-3", "auth-4")
         ));
     }
 
@@ -56,14 +58,18 @@ class FailedAuthenticationRuleTest {
                         "FAILED_AUTHENTICATION_SPIKE",
                         "5 failed authentication attempts detected within 5 minutes",
                         5,
-                        "122.167.118.87"
+                        "122.167.118.87",
+                        start.plusSeconds(4 * 60L),
+                        List.of("a-0", "a-1", "a-2", "a-3", "a-4")
                 ),
                 new DetectionResult(
                         true,
                         "FAILED_AUTHENTICATION_SPIKE",
                         "5 failed authentication attempts detected within 5 minutes",
                         5,
-                        "122.167.118.89"
+                        "122.167.118.89",
+                        start.plusSeconds(4 * 60L),
+                        List.of("b-0", "b-1", "b-2", "b-3", "b-4")
                 )
         );
     }
@@ -83,7 +89,9 @@ class FailedAuthenticationRuleTest {
                 "FAILED_AUTHENTICATION_SPIKE",
                 null,
                 2,
-                "122.167.118.87"
+                "122.167.118.87",
+                start.plusSeconds(60),
+                List.of("auth-1", "auth-2")
         ));
     }
 

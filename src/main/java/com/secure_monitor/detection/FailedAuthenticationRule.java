@@ -35,12 +35,20 @@ public class FailedAuthenticationRule implements DetectionRule {
 
         List<DetectionResult> results = new ArrayList<>();
         for (Map.Entry<String, List<SecurityEventEntity>> entry : failuresBySource.entrySet()) {
-            int eventCount = countWithinWindow(entry.getValue());
-            boolean detected = eventCount >= THRESHOLD;
+            SpikeWindow window = densestWindow(entry.getValue());
+            boolean detected = window.eventCount() >= THRESHOLD;
             String description = detected
-                    ? eventCount + " failed authentication attempts detected within " + WINDOW.toMinutes() + " minutes"
+                    ? window.eventCount() + " failed authentication attempts detected within " + WINDOW.toMinutes() + " minutes"
                     : null;
-            results.add(new DetectionResult(detected, RULE_NAME, description, eventCount, entry.getKey()));
+            results.add(new DetectionResult(
+                    detected,
+                    RULE_NAME,
+                    description,
+                    window.eventCount(),
+                    entry.getKey(),
+                    window.detectedAt(),
+                    window.relatedEventIds()
+            ));
         }
         return results;
     }
@@ -62,20 +70,30 @@ public class FailedAuthenticationRule implements DetectionRule {
         return FAILED_RESULT.equals(String.valueOf(body.get("result")));
     }
 
-    private static int countWithinWindow(List<SecurityEventEntity> events) {
-        List<Instant> times = events.stream()
-                .map(SecurityEventEntity::getRecordedAt)
-                .sorted(Comparator.naturalOrder())
+    private static SpikeWindow densestWindow(List<SecurityEventEntity> events) {
+        List<SecurityEventEntity> sorted = events.stream()
+                .sorted(Comparator.comparing(SecurityEventEntity::getRecordedAt))
                 .toList();
-        int best = 0;
+        int bestLeft = 0;
+        int bestRight = 0;
         int left = 0;
-        for (int right = 0; right < times.size(); right++) {
-            Instant earliest = times.get(right).minus(WINDOW);
-            while (times.get(left).isBefore(earliest)) {
+        for (int right = 0; right < sorted.size(); right++) {
+            Instant earliest = sorted.get(right).getRecordedAt().minus(WINDOW);
+            while (sorted.get(left).getRecordedAt().isBefore(earliest)) {
                 left++;
             }
-            best = Math.max(best, right - left + 1);
+            if (right - left > bestRight - bestLeft) {
+                bestLeft = left;
+                bestRight = right;
+            }
         }
-        return best;
+        List<SecurityEventEntity> window = sorted.subList(bestLeft, bestRight + 1);
+        List<String> relatedEventIds = window.stream()
+                .map(SecurityEventEntity::getEventId)
+                .toList();
+        return new SpikeWindow(window.size(), window.get(window.size() - 1).getRecordedAt(), relatedEventIds);
+    }
+
+    private record SpikeWindow(int eventCount, Instant detectedAt, List<String> relatedEventIds) {
     }
 }

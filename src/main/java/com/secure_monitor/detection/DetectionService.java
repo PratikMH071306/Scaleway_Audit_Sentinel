@@ -1,5 +1,6 @@
 package com.secure_monitor.detection;
 
+import com.secure_monitor.alert.AlertService;
 import com.secure_monitor.domain.SecurityEventEntity;
 import com.secure_monitor.repository.SecurityEventRepository;
 import org.springframework.stereotype.Service;
@@ -15,13 +16,16 @@ public class DetectionService {
 
     private final SecurityEventRepository repository;
     private final FailedAuthenticationRule failedAuthenticationRule;
+    private final AlertService alertService;
 
     public DetectionService(
             SecurityEventRepository repository,
-            FailedAuthenticationRule failedAuthenticationRule
+            FailedAuthenticationRule failedAuthenticationRule,
+            AlertService alertService
     ) {
         this.repository = repository;
         this.failedAuthenticationRule = failedAuthenticationRule;
+        this.alertService = alertService;
     }
 
     public List<DetectionResult> detectFailedAuthentication() {
@@ -31,6 +35,12 @@ public class DetectionService {
                         FailedAuthenticationRule.AUTHENTICATION_SERVICE,
                         since
                 );
-        return failedAuthenticationRule.evaluate(events);
+        List<DetectionResult> results = failedAuthenticationRule.evaluate(events);
+        for (DetectionResult result : results) {
+            if (result.detected()) {
+                alertService.record(result);
+            }
+        }
+        return results;
     }
 }
