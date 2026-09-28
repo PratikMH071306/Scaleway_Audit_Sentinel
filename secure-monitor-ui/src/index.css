@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-mono: "Cascadia Mono", "Segoe UI Mono", ui-monospace, monospace;
+  --color-ink: #e8efe9;
+  --color-muted: #9aab9f;
+  --color-canvas: #101613;
+  --color-panel: #18211c;
+  --color-line: #314239;
+  --color-signal: #d6f25c;
+  --color-critical: #ff6b4a;
+  --color-high: #f0b429;
+  --color-medium: #79b8ff;
+  --color-low: #9aab9f;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+button,
+select,
+a {
+  &:focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 767px) {
+  .alert-table,
+  .alert-table tbody,
+  .alert-table tr,
+  .alert-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .alert-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .alert-table tr {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  .alert-table td {
+    padding: 0.4rem 1rem;
+    border: 0;
+  }
+
+  .alert-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+}
