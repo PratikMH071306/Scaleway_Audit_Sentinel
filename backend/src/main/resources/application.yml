@@ -1,21 +1,13 @@
-spring:
-  application:
-    name: secure-monitor
-  datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+secure-monitor:
+  cors:
+    allowed-origins:
+      - http://localhost:*
+      - http://127.0.0.1:*
 
-server:
-  port: 8084
-
-scaleway:
-  secret-key: ${SCW_SECRET_KEY}
-  access-key: ${SCW_ACCESS_KEY}
-  organization-id: ${SCW_ORGANIZATION_ID}
-  region: ${SCW_REGION:fr-par}
-  event-lookback: P7D
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:3600}
+  bootstrap:
+    username: ${BOOTSTRAP_ADMIN_USERNAME:admin}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}

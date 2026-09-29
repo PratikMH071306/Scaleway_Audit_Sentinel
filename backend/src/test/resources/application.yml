@@ -1,0 +1,7 @@
+security:
+  jwt:
+    secret: test-only-jwt-secret-key-32-bytes!!
+    expiration: 3600
+  bootstrap:
+    username: admin
+    password: ""
