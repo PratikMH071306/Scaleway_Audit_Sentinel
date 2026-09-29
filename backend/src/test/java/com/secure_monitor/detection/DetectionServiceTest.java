@@ -63,7 +63,8 @@ class DetectionServiceTest {
                 List.of("auth-1"),
                 "org-1",
                 "test01",
-                false
+                false,
+                null
         ));
         verify(alertService, never()).record(any());
     }
@@ -93,7 +94,8 @@ class DetectionServiceTest {
                 List.of("auth-0", "auth-1", "auth-2", "auth-3", "auth-4"),
                 "org-1",
                 "test01",
-                false
+                false,
+                null
         ));
     }
 

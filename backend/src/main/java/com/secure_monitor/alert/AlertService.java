@@ -4,6 +4,7 @@ import com.secure_monitor.detection.DetectionResult;
 import com.secure_monitor.detection.FailedAuthenticationRule;
 import com.secure_monitor.domain.AlertEntity;
 import com.secure_monitor.repository.AlertRepository;
+import com.secure_monitor.scaleway.iam.ScalewayUserResolver;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,9 +19,11 @@ public class AlertService {
     static final String SUSPICIOUS_AUTHENTICATION_TITLE = "Suspicious authentication activity";
 
     private final AlertRepository repository;
+    private final ScalewayUserResolver userResolver;
 
-    public AlertService(AlertRepository repository) {
+    public AlertService(AlertRepository repository, ScalewayUserResolver userResolver) {
         this.repository = repository;
+        this.userResolver = userResolver;
     }
 
     public AlertResponse record(DetectionResult result) {
@@ -54,7 +57,8 @@ public class AlertService {
     }
 
     public AlertResponse get(UUID id) {
-        return AlertResponse.from(find(id));
+        AlertEntity alert = userResolver.attachUserId(find(id));
+        return AlertResponse.from(userResolver.refreshLockState(alert));
     }
 
     public AlertResponse resolve(UUID id) {
@@ -79,6 +83,7 @@ public class AlertService {
                 result.sourceIp(),
                 result.organizationId(),
                 result.username(),
+                result.scalewayUserId(),
                 result.eventCount(),
                 result.relatedEventIds() == null ? List.of() : List.copyOf(result.relatedEventIds())
         );

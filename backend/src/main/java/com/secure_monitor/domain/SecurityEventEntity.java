@@ -43,6 +43,12 @@ public class SecurityEventEntity {
 
     private int statusCode;
 
+    private String actorPrincipalId;
+
+    private String scalewayUserId;
+
+    private String scalewayUsername;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "resources")
     private List<Map<String, Object>> resources;
@@ -125,6 +131,30 @@ public class SecurityEventEntity {
 
     public int getStatusCode() {
         return statusCode;
+    }
+
+    public String getActorPrincipalId() {
+        return actorPrincipalId;
+    }
+
+    public void setActorPrincipalId(String actorPrincipalId) {
+        this.actorPrincipalId = actorPrincipalId;
+    }
+
+    public String getScalewayUserId() {
+        return scalewayUserId;
+    }
+
+    public void setScalewayUserId(String scalewayUserId) {
+        this.scalewayUserId = scalewayUserId;
+    }
+
+    public String getScalewayUsername() {
+        return scalewayUsername;
+    }
+
+    public void setScalewayUsername(String scalewayUsername) {
+        this.scalewayUsername = scalewayUsername;
     }
 
     public List<Map<String, Object>> getResources() {

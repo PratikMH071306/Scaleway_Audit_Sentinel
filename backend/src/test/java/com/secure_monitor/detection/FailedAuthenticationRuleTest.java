@@ -53,7 +53,8 @@ class FailedAuthenticationRuleTest {
                 5,
                 start.plusSeconds(4 * 60L),
                 List.of("fail-0", "fail-1", "fail-2", "fail-3", "fail-4", "ok"),
-                true
+                true,
+                "ead5aed3-1d91-4201-b388-98c2febfc404"
         ));
     }
 
@@ -150,7 +151,31 @@ class FailedAuthenticationRuleTest {
                 relatedEventIds,
                 ORG,
                 USER,
-                followedBySuccess
+                followedBySuccess,
+                null
+        );
+    }
+
+    private static DetectionResult detected(
+            int eventCount,
+            Instant detectedAt,
+            List<String> relatedEventIds,
+            boolean followedBySuccess,
+            String scalewayUserId
+    ) {
+        DetectionResult result = detected(eventCount, detectedAt, relatedEventIds, followedBySuccess);
+        return new DetectionResult(
+                result.detected(),
+                result.rule(),
+                result.description(),
+                result.eventCount(),
+                result.sourceIp(),
+                result.detectedAt(),
+                result.relatedEventIds(),
+                result.organizationId(),
+                result.username(),
+                result.followedBySuccess(),
+                scalewayUserId
         );
     }
 

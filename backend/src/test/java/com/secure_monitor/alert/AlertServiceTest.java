@@ -39,6 +39,9 @@ class AlertServiceTest {
     @Mock
     private AlertRepository repository;
 
+    @Mock
+    private com.secure_monitor.scaleway.iam.ScalewayUserResolver userResolver;
+
     @Test
     void createsOneOpenAlertFromADetection() {
         when(repository.existsByRuleAndOrganizationIdAndUsernameAndSourceIpAndStatus(
@@ -50,7 +53,7 @@ class AlertServiceTest {
         )).thenReturn(false);
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        AlertService service = new AlertService(repository);
+        AlertService service = new AlertService(repository, userResolver);
         AlertResponse response = service.record(spike(SOURCE_A));
 
         ArgumentCaptor<AlertEntity> saved = ArgumentCaptor.forClass(AlertEntity.class);
@@ -90,7 +93,7 @@ class AlertServiceTest {
                 AlertStatus.OPEN
         )).thenReturn(Optional.of(openAlert(existingId, SOURCE_A, USER)));
 
-        AlertService service = new AlertService(repository);
+        AlertService service = new AlertService(repository, userResolver);
         service.record(spike(SOURCE_A));
         AlertResponse second = service.record(spike(SOURCE_A));
 
@@ -106,7 +109,7 @@ class AlertServiceTest {
         )).thenReturn(false);
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        AlertService service = new AlertService(repository);
+        AlertService service = new AlertService(repository, userResolver);
         service.record(spike(SOURCE_A, USER));
         service.record(spike(SOURCE_B, USER));
         service.record(spike(SOURCE_A, "test02"));
@@ -120,7 +123,7 @@ class AlertServiceTest {
 
     @Test
     void doesNotRecordActivityThatWasNotDetected() {
-        AlertService service = new AlertService(repository);
+        AlertService service = new AlertService(repository, userResolver);
 
         assertThatThrownBy(() -> service.record(new DetectionResult(
                 false,
@@ -132,7 +135,8 @@ class AlertServiceTest {
                 List.of("e1", "e2"),
                 ORG,
                 USER,
-                false
+                false,
+                null
         ))).isInstanceOf(IllegalArgumentException.class);
 
         verify(repository, never()).save(any());
@@ -143,7 +147,7 @@ class AlertServiceTest {
         UUID id = UUID.fromString("8e5c0000-0000-4000-8000-000000000099");
         when(repository.findById(id)).thenReturn(Optional.empty());
 
-        AlertService service = new AlertService(repository);
+        AlertService service = new AlertService(repository, userResolver);
 
         assertThatThrownBy(() -> service.get(id))
                 .isInstanceOf(ResponseStatusException.class)
@@ -166,7 +170,8 @@ class AlertServiceTest {
                 List.of("e1", "e2", "e3", "e4", "e5"),
                 ORG,
                 username,
-                false
+                false,
+                null
         );
     }
 
@@ -177,7 +182,7 @@ class AlertServiceTest {
         when(repository.findById(id)).thenReturn(Optional.of(entity));
         when(repository.save(entity)).thenReturn(entity);
 
-        AlertResponse response = new AlertService(repository).resolve(id);
+        AlertResponse response = new AlertService(repository, userResolver).resolve(id);
 
         assertThat(response.status()).isEqualTo(AlertStatus.RESOLVED);
         assertThat(entity.getStatus()).isEqualTo(AlertStatus.RESOLVED);
@@ -194,6 +199,7 @@ class AlertServiceTest {
                 sourceIp,
                 ORG,
                 username,
+                null,
                 5,
                 List.of("e1", "e2", "e3", "e4", "e5")
         );

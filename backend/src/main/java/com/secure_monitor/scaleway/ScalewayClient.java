@@ -1,7 +1,11 @@
 package com.secure_monitor.scaleway;
 
 import com.secure_monitor.scaleway.dto.AuditEventsResponse;
+import com.secure_monitor.scaleway.iam.ScalewayApiException;
+import com.secure_monitor.scaleway.iam.ScalewayIamClient;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -36,10 +40,21 @@ public class ScalewayClient {
 
 
     public AuditEventsResponse getEvents() {
-        AuditEventsResponse response = restClient.get()
-                .uri(eventsUri(config, Instant.now()).toString())
-                .retrieve()
-                .body(AuditEventsResponse.class);
+        AuditEventsResponse response;
+        try {
+            response = restClient.get()
+                    .uri(eventsUri(config, Instant.now()).toString())
+                    .retrieve()
+                    .body(AuditEventsResponse.class);
+        } catch (RestClientResponseException exception) {
+            throw ScalewayIamClient.map(exception);
+        } catch (RestClientException exception) {
+            throw new ScalewayApiException(
+                    org.springframework.http.HttpStatus.BAD_GATEWAY,
+                    "Scaleway could not be reached.",
+                    exception
+            );
+        }
 
         int eventCount = response == null || response.events() == null
                 ? 0

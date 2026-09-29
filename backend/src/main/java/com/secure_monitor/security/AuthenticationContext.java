@@ -1,6 +1,8 @@
 package com.secure_monitor.security;
 
 import org.springframework.security.core.Authentication;
+
+import java.util.UUID;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -12,6 +14,14 @@ public final class AuthenticationContext {
     public static String currentUsername() {
         Authentication authentication = currentAuthentication();
         return authentication.getName();
+    }
+
+    public static UUID currentUserId() {
+        Authentication authentication = currentAuthentication();
+        if (authentication.getPrincipal() instanceof MonitorUserDetails details) {
+            return details.getId();
+        }
+        return null;
     }
 
     public static Role currentRole() {

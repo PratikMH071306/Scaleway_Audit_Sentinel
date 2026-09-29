@@ -42,8 +42,28 @@ public class ScalewayEventMapper {
                 event.requestBody(),
                 event.statusCode()
         );
+        entity.setActorPrincipalId(principalId(event));
         entity.setResources(resourceMaps(event.resources()));
+        applyIamUser(entity, event.resources());
         return entity;
+    }
+
+    private static void applyIamUser(SecurityEventEntity entity, List<ResourceDto> resources) {
+        if (resources == null) {
+            return;
+        }
+        for (ResourceDto resource : resources) {
+            if (resource == null || !"iam_user".equals(resource.type())) {
+                continue;
+            }
+            if (!isBlank(resource.id())) {
+                entity.setScalewayUserId(resource.id());
+            }
+            if (!isBlank(resource.name())) {
+                entity.setScalewayUsername(resource.name());
+            }
+            return;
+        }
     }
 
     private static String principalId(AuditEventDto event) {

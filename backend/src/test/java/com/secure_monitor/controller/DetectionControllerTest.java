@@ -38,7 +38,8 @@ class DetectionControllerTest {
                         List.of("auth-1", "auth-2", "auth-3", "auth-4", "auth-5"),
                         "org-1",
                         "test01",
-                        false
+                        false,
+                        null
                 ),
                 new DetectionResult(
                         true,
@@ -50,7 +51,8 @@ class DetectionControllerTest {
                         List.of("auth-6", "auth-7", "auth-8", "auth-9", "auth-10"),
                         "org-1",
                         "test02",
-                        false
+                        false,
+                        null
                 )
         ));
 
@@ -78,7 +80,8 @@ class DetectionControllerTest {
                 List.of("auth-1", "auth-2"),
                 "org-1",
                 "test01",
-                false
+                false,
+                null
         )));
 
         mockMvc().perform(get("/api/detection/failed-authentication"))

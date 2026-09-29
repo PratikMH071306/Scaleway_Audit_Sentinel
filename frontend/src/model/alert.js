@@ -16,6 +16,8 @@ import { ApiError } from '../api/http.js'
  *   sourceIp: string,
  *   organizationId: string,
  *   username: string,
+ *   scalewayUserId: string,
+ *   scalewayUserLocked: boolean,
  *   eventCount: number,
  *   relatedEventIds: string[]
  * }} Alert
@@ -62,6 +64,8 @@ export function parseAlert(value) {
     sourceIp: typeof alert.sourceIp === 'string' ? alert.sourceIp : '',
     organizationId: typeof alert.organizationId === 'string' ? alert.organizationId : '',
     username: typeof alert.username === 'string' ? alert.username : '',
+    scalewayUserId: typeof alert.scalewayUserId === 'string' ? alert.scalewayUserId : '',
+    scalewayUserLocked: alert.scalewayUserLocked === true,
     eventCount: typeof alert.eventCount === 'number' ? alert.eventCount : 0,
     relatedEventIds: Array.isArray(alert.relatedEventIds)
       ? alert.relatedEventIds.filter((id) => typeof id === 'string')

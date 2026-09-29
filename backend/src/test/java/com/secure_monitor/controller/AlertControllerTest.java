@@ -92,6 +92,8 @@ class AlertControllerTest {
                 sourceIp,
                 "e37c8fea-0284-4f90-bbfe-04666c7ecfd6",
                 "test01",
+                null,
+                null,
                 5,
                 List.of("e1", "e2", "e3", "e4", "e5")
         );

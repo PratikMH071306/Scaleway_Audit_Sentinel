@@ -170,6 +170,8 @@ class ScalewayEventMapperTest {
         assertThat(entity.getRequestId()).isEqualTo("req-9");
         assertThat(entity.getRequestBody()).isEqualTo(Map.of("name", "web"));
         assertThat(entity.getStatusCode()).isEqualTo(201);
+        assertThat(entity.getActorPrincipalId()).isEqualTo("user-42");
+        assertThat(entity.getScalewayUserId()).isNull();
         assertThat(entity.getResources()).containsExactly(Map.of(
                 "id", "srv-1",
                 "type", "instance_server",

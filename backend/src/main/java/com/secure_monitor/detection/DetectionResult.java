@@ -16,6 +16,7 @@ public record DetectionResult(
         List<String> relatedEventIds,
         String organizationId,
         String username,
-        boolean followedBySuccess
+        boolean followedBySuccess,
+        String scalewayUserId
 ) {
 }

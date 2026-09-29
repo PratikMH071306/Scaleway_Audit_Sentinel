@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { apiPost, errorMessage } from '../api/http.js'
+import { apiGet, apiPost, errorMessage } from '../api/http.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 import ErrorNotice from '../components/ErrorNotice.jsx'
 import Header from '../components/Header.jsx'
@@ -16,6 +16,58 @@ export default function AlertDetailsPage() {
   const { alert, error, loading, refresh } = useAlert(id)
   const [actionError, setActionError] = useState('')
   const [resolving, setResolving] = useState(false)
+  const [pendingAction, setPendingAction] = useState('')
+  const [acting, setActing] = useState(false)
+  const [lockMessage, setLockMessage] = useState('')
+  const [lockedNow, setLockedNow] = useState(null)
+  const [history, setHistory] = useState([])
+  const userLocked = lockedNow === null ? alert?.scalewayUserLocked === true : lockedNow
+
+  useEffect(() => {
+    if (!id) {
+      return undefined
+    }
+    let cancelled = false
+    apiGet(`/api/alerts/${id}/remediations`)
+      .then((payload) => {
+        if (!cancelled) {
+          setHistory(Array.isArray(payload) ? payload : [])
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setHistory([])
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [id, lockMessage])
+
+  async function confirmRemediation() {
+    const action = pendingAction
+    setActionError('')
+    setActing(true)
+    try {
+      const result = await apiPost(`/api/alerts/${id}/remediate`, { action })
+      setLockMessage(result?.message || (action === 'UNLOCK_USER' ? 'User unlocked successfully' : 'User locked successfully'))
+      if (result?.status === 'SUCCESS') {
+        setLockedNow(result.afterLocked === true)
+      }
+      setPendingAction('')
+      try {
+        await refresh()
+        setLockedNow(null)
+      } catch {
+        // Keep the button on the action that just succeeded.
+      }
+    } catch (cause) {
+      setActionError(errorMessage(cause))
+      setPendingAction('')
+    } finally {
+      setActing(false)
+    }
+  }
 
   async function resolveAlert() {
     setActionError('')
@@ -108,7 +160,77 @@ export default function AlertDetailsPage() {
                 </div>
               )}
             </section>
+
+            <section className="border-t border-line px-5 py-5">
+              <h2 className="text-base font-semibold">Remediation</h2>
+              <p className="mt-1 text-sm text-muted">
+                Lock or unlock the Scaleway IAM member recorded on this alert. This does not resolve the alert.
+              </p>
+              <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Detail label="Target user" value={alert.username || 'Unknown'} />
+                <Detail label="Scaleway user ID" value={alert.scalewayUserId || 'Not captured'} mono />
+                <Detail label="Scaleway status" value={userLocked ? 'Locked' : 'Unlocked'} />
+              </dl>
+              {lockMessage ? <p className="mt-4 text-sm text-ink">{lockMessage}</p> : null}
+              {session?.role === 'ADMIN' && alert.status === 'OPEN' && (alert.scalewayUserId || alert.username) ? (
+                <div className="mt-4 flex gap-2">
+                  {userLocked ? (
+                    <button
+                      type="button"
+                      className="rounded-md border border-line px-3 py-1.5 text-sm font-semibold disabled:opacity-60"
+                      disabled={acting}
+                      onClick={() => setPendingAction('UNLOCK_USER')}
+                    >
+                      {acting ? 'Unlocking…' : 'Unlock User'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="rounded-md border border-line px-3 py-1.5 text-sm font-semibold disabled:opacity-60"
+                      disabled={acting}
+                      onClick={() => setPendingAction('LOCK_USER')}
+                    >
+                      {acting ? 'Locking…' : 'Lock User'}
+                    </button>
+                  )}
+                </div>
+              ) : null}
+              {history.length > 0 ? (
+                <ul className="mt-4 space-y-2 text-sm">
+                  {history.map((item) => (
+                    <li key={item.remediationId} className="rounded-md border border-line px-3 py-2">
+                      {item.action} · {item.targetUsername || item.targetUserId} · {item.status}
+                      {' · '}
+                      {item.beforeLocked ? 'Locked' : 'Unlocked'} → {item.afterLocked ? 'Locked' : 'Unlocked'}
+                      {item.message ? ` · ${item.message}` : ''}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
           </article>
+        ) : null}
+        {pendingAction && alert ? (
+          <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40 px-4" role="presentation">
+            <div role="dialog" aria-labelledby="lock-title" className="w-full max-w-md rounded-lg border border-line bg-panel p-5">
+              <h2 id="lock-title" className="text-lg font-semibold">
+                {pendingAction === 'UNLOCK_USER' ? 'Unlock user?' : 'Lock user?'}
+              </h2>
+              <p className="mt-2 text-sm text-muted">
+                {pendingAction === 'UNLOCK_USER'
+                  ? `You are about to unlock ${alert.username || 'this user'} (${alert.scalewayUserId || 'id resolved on confirm'}). They will be able to log in and use API keys again.`
+                  : `You are about to lock ${alert.username || 'this user'} (${alert.scalewayUserId || 'id resolved on confirm'}). A locked member cannot log in or use API keys.`}
+              </p>
+              <div className="mt-5 flex justify-end gap-2">
+                <button type="button" className="rounded-md border border-line px-3 py-1.5 text-sm" disabled={acting} onClick={() => setPendingAction('')}>
+                  Cancel
+                </button>
+                <button type="button" className="rounded-md bg-signal px-3 py-1.5 text-sm font-semibold text-canvas disabled:opacity-60" disabled={acting} onClick={confirmRemediation}>
+                  {acting ? 'Working…' : pendingAction === 'UNLOCK_USER' ? 'Confirm Unlock' : 'Confirm Lock'}
+                </button>
+              </div>
+            </div>
+          </div>
         ) : null}
       </main>
     </div>

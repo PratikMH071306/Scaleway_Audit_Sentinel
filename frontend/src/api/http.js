@@ -42,8 +42,8 @@ export async function apiGet(path) {
 /**
  * @param {string} path
  */
-export async function apiPost(path) {
-  return request(path, { method: 'POST' })
+export async function apiPost(path, body) {
+  return request(path, { method: 'POST', body })
 }
 
 /**
@@ -72,12 +72,14 @@ async function request(path, options) {
     throw new ApiError('Unable to reach the security monitor API.', { cause })
   }
 
-  if (response.status === 401) {
-    unauthorizedHandler()
-  }
-
   if (!response.ok) {
-    throw new ApiError(messageForStatus(response.status), { status: response.status })
+    const payload = await response.json().catch(() => null)
+    const serverMessage = payload && typeof payload.message === 'string' ? payload.message : ''
+    const sessionEnded = serverMessage === '' || serverMessage === 'Authentication is required'
+    if (response.status === 401 && sessionEnded) {
+      unauthorizedHandler()
+    }
+    throw new ApiError(serverMessage || messageForStatus(response.status), { status: response.status })
   }
 
   if (response.status === 204) {

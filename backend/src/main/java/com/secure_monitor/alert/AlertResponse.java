@@ -17,6 +17,8 @@ public record AlertResponse(
         String sourceIp,
         String organizationId,
         String username,
+        String scalewayUserId,
+        Boolean scalewayUserLocked,
         int eventCount,
         List<String> relatedEventIds
 ) {
@@ -32,6 +34,8 @@ public record AlertResponse(
                 entity.getSourceIp(),
                 entity.getOrganizationId(),
                 entity.getUsername(),
+                entity.getScalewayUserId(),
+                entity.getScalewayUserLocked(),
                 entity.getEventCount(),
                 entity.getRelatedEventIds()
         );

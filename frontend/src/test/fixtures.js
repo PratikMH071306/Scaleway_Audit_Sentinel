@@ -10,6 +10,8 @@ export function alert(overrides = {}) {
     sourceIp: '122.167.118.87',
     organizationId: 'e37c8fea-0284-4f90-bbfe-04666c7ecfd6',
     username: 'test01',
+    scalewayUserId: 'ead5aed3-1d91-4201-b388-98c2febfc404',
+    scalewayUserLocked: false,
     eventCount: 5,
     relatedEventIds: ['e1', 'e2', 'e3', 'e4', 'e5'],
     ...overrides,

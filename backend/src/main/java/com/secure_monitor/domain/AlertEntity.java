@@ -45,6 +45,10 @@ public class AlertEntity {
 
     private String username;
 
+    private String scalewayUserId;
+
+    private Boolean scalewayUserLocked;
+
     private int eventCount;
 
     @JdbcTypeCode(SqlTypes.JSON)
@@ -64,6 +68,7 @@ public class AlertEntity {
             String sourceIp,
             String organizationId,
             String username,
+            String scalewayUserId,
             int eventCount,
             List<String> relatedEventIds
     ) {
@@ -76,6 +81,7 @@ public class AlertEntity {
         this.sourceIp = sourceIp;
         this.organizationId = organizationId;
         this.username = username;
+        this.scalewayUserId = scalewayUserId;
         this.eventCount = eventCount;
         this.relatedEventIds = relatedEventIds;
     }
@@ -122,6 +128,22 @@ public class AlertEntity {
 
     public String getUsername() {
         return username;
+    }
+
+    public String getScalewayUserId() {
+        return scalewayUserId;
+    }
+
+    public void setScalewayUserId(String scalewayUserId) {
+        this.scalewayUserId = scalewayUserId;
+    }
+
+    public Boolean getScalewayUserLocked() {
+        return scalewayUserLocked;
+    }
+
+    public void setScalewayUserLocked(Boolean scalewayUserLocked) {
+        this.scalewayUserLocked = scalewayUserLocked;
     }
 
     public int getEventCount() {

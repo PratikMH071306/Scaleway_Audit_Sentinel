@@ -3,6 +3,7 @@ package com.secure_monitor.scaleway;
 import com.secure_monitor.domain.SecurityEventEntity;
 import com.secure_monitor.repository.SecurityEventRepository;
 import com.secure_monitor.scaleway.dto.AuditEventDto;
+import com.secure_monitor.scaleway.iam.ScalewayApiException;
 import com.secure_monitor.scaleway.dto.AuditEventsResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,13 @@ public class ScalewayService {
 
     @Transactional
     public void syncEvents() {
-        AuditEventsResponse response = client.getEvents();
+        AuditEventsResponse response;
+        try {
+            response = client.getEvents();
+        } catch (ScalewayApiException exception) {
+            log.warn("Audit event sync skipped: {}", exception.getSafeMessage());
+            return;
+        }
         List<AuditEventDto> events = response == null || response.events() == null
                 ? List.of()
                 : response.events();

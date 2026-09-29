@@ -55,7 +55,8 @@ public class FailedAuthenticationRule implements DetectionRule {
                     relatedEventIds,
                     entry.getKey().organizationId(),
                     entry.getKey().username(),
-                    followedBySuccess
+                    followedBySuccess,
+                    iamUserId(entry.getValue(), success)
             ));
         }
         return results;
@@ -116,6 +117,30 @@ public class FailedAuthenticationRule implements DetectionRule {
 
     private static Subject subjectOf(SecurityEventEntity event) {
         return new Subject(event.getOrganizationId(), username(event), event.getSourceIp());
+    }
+
+    static String iamUserId(List<SecurityEventEntity> failures, SecurityEventEntity success) {
+        for (SecurityEventEntity event : failures) {
+            String userId = iamUserId(event);
+            if (userId != null) {
+                return userId;
+            }
+        }
+        return success == null ? null : iamUserId(success);
+    }
+
+    static String iamUserId(SecurityEventEntity event) {
+        List<Map<String, Object>> resources = event.getResources();
+        if (resources == null) {
+            return null;
+        }
+        for (Map<String, Object> resource : resources) {
+            if (resource == null || !"iam_user".equals(text(resource.get("type")))) {
+                continue;
+            }
+            return text(resource.get("id"));
+        }
+        return null;
     }
 
     static String username(SecurityEventEntity event) {
