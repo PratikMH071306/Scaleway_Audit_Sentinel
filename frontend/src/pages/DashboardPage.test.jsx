@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
+import { AuthProvider } from '../auth/AuthContext.jsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getAlerts } from '../api/alertApi.js'
 import { ApiError } from '../api/http.js'
@@ -121,7 +122,9 @@ describe('DashboardPage', () => {
 function renderDashboard() {
   return render(
     <MemoryRouter>
-      <DashboardPage />
+      <AuthProvider>
+        <DashboardPage />
+      </AuthProvider>
     </MemoryRouter>,
   )
 }

@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { AuthProvider } from '../auth/AuthContext.jsx'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getAlertById } from '../api/alertApi.js'
 import { ApiError } from '../api/http.js'
@@ -65,9 +66,11 @@ describe('AlertDetailsPage', () => {
 function renderDetails(id) {
   return render(
     <MemoryRouter initialEntries={[`/alerts/${id}`]}>
-      <Routes>
-        <Route path="/alerts/:id" element={<AlertDetailsPage />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/alerts/:id" element={<AlertDetailsPage />} />
+        </Routes>
+      </AuthProvider>
     </MemoryRouter>,
   )
 }

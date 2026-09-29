@@ -2,8 +2,10 @@ package com.secure_monitor.controller;
 
 import com.secure_monitor.alert.AlertResponse;
 import com.secure_monitor.alert.AlertService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,5 +30,11 @@ public class AlertController {
     @GetMapping("/{id}")
     public AlertResponse get(@PathVariable UUID id) {
         return alertService.get(id);
+    }
+
+    @PostMapping("/{id}/resolve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public AlertResponse resolve(@PathVariable UUID id) {
+        return alertService.resolve(id);
     }
 }

@@ -42,8 +42,17 @@ public class AlertService {
     }
 
     public AlertResponse get(UUID id) {
+        return AlertResponse.from(find(id));
+    }
+
+    public AlertResponse resolve(UUID id) {
+        AlertEntity entity = find(id);
+        entity.setStatus(AlertStatus.RESOLVED);
+        return AlertResponse.from(repository.save(entity));
+    }
+
+    private AlertEntity find(UUID id) {
         return repository.findById(id)
-                .map(AlertResponse::from)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 

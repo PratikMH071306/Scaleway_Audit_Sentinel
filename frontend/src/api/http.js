@@ -10,6 +10,17 @@ export class ApiError extends Error {
   }
 }
 
+let tokenProvider = () => null
+let unauthorizedHandler = () => {}
+
+/**
+ * @param {{ token: () => string | null, onUnauthorized: () => void }} handlers
+ */
+export function configureApiAuth(handlers) {
+  tokenProvider = handlers.token
+  unauthorizedHandler = handlers.onUnauthorized
+}
+
 export function apiBaseUrl() {
   const base = import.meta.env.VITE_API_BASE_URL
   if (typeof base !== 'string' || base.trim() === '') {
@@ -21,20 +32,56 @@ export function apiBaseUrl() {
 /**
  * @param {string} path
  */
+/**
+ * @param {string} path
+ */
 export async function apiGet(path) {
+  return request(path, { method: 'GET' })
+}
+
+/**
+ * @param {string} path
+ */
+export async function apiPost(path) {
+  return request(path, { method: 'POST' })
+}
+
+/**
+ * @param {string} path
+ * @param {{ method: string, body?: unknown }} options
+ */
+async function request(path, options) {
   const url = `${apiBaseUrl()}${path}`
+  const headers = { Accept: 'application/json' }
+  const token = tokenProvider()
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  if (options.body !== undefined) {
+    headers['Content-Type'] = 'application/json'
+  }
+
   let response
   try {
     response = await fetch(url, {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
+      method: options.method,
+      headers,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
     })
   } catch (cause) {
     throw new ApiError('Unable to reach the security monitor API.', { cause })
   }
 
+  if (response.status === 401) {
+    unauthorizedHandler()
+  }
+
   if (!response.ok) {
     throw new ApiError(messageForStatus(response.status), { status: response.status })
+  }
+
+  if (response.status === 204) {
+    return null
   }
 
   try {
@@ -61,6 +108,12 @@ export function errorMessage(error) {
  * @param {number} status
  */
 function messageForStatus(status) {
+  if (status === 401) {
+    return 'Your session has ended. Sign in again.'
+  }
+  if (status === 403) {
+    return 'You do not have permission to perform this action.'
+  }
   if (status === 404) {
     return 'The requested alert was not found.'
   }

@@ -17,7 +17,7 @@ public class CorsConfig {
     FilterRegistrationBean<CorsFilter> apiCorsFilter(CorsProperties properties) {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(properties.allowedOrigins());
-        configuration.setAllowedMethods(List.of("GET", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);

@@ -145,6 +145,19 @@ class AlertServiceTest {
         );
     }
 
+    @Test
+    void marksAnOpenAlertResolved() {
+        UUID id = UUID.fromString("8e5c0000-0000-4000-8000-000000000001");
+        AlertEntity entity = openAlert(id, SOURCE_A);
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+        when(repository.save(entity)).thenReturn(entity);
+
+        AlertResponse response = new AlertService(repository).resolve(id);
+
+        assertThat(response.status()).isEqualTo(AlertStatus.RESOLVED);
+        assertThat(entity.getStatus()).isEqualTo(AlertStatus.RESOLVED);
+    }
+
     private static AlertEntity openAlert(UUID id, String sourceIp) {
         AlertEntity entity = new AlertEntity(
                 FailedAuthenticationRule.RULE_NAME,

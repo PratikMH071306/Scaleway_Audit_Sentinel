@@ -1,5 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { apiPost, errorMessage } from '../api/http.js'
+import { useAuth } from '../auth/AuthContext.jsx'
 import ErrorNotice from '../components/ErrorNotice.jsx'
 import Header from '../components/Header.jsx'
 import RefreshButton from '../components/RefreshButton.jsx'
@@ -10,7 +12,23 @@ import { useAlert } from '../hooks/useAlert.js'
 
 export default function AlertDetailsPage() {
   const { id } = useParams()
+  const { session } = useAuth()
   const { alert, error, loading, refresh } = useAlert(id)
+  const [actionError, setActionError] = useState('')
+  const [resolving, setResolving] = useState(false)
+
+  async function resolveAlert() {
+    setActionError('')
+    setResolving(true)
+    try {
+      await apiPost(`/api/alerts/${id}/resolve`)
+      await refresh()
+    } catch (cause) {
+      setActionError(errorMessage(cause))
+    } finally {
+      setResolving(false)
+    }
+  }
 
   useEffect(() => {
     document.title = alert?.title ? `${alert.title} · Security Monitor` : 'Alert · Security Monitor'
@@ -26,6 +44,7 @@ export default function AlertDetailsPage() {
 
         {loading && !alert ? <p className="text-sm text-muted">Loading alert…</p> : null}
         {error ? <ErrorNotice message={error} onRetry={refresh} /> : null}
+        {actionError ? <ErrorNotice message={actionError} /> : null}
 
         {alert ? (
           <article className="rounded-lg border border-line bg-panel">
@@ -33,6 +52,16 @@ export default function AlertDetailsPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <SeverityBadge severity={alert.severity} />
                 <StatusBadge status={alert.status} />
+                {session?.role === 'ADMIN' && alert.status !== 'RESOLVED' ? (
+                  <button
+                    type="button"
+                    className="rounded-md bg-signal px-3 py-1.5 text-sm font-semibold text-canvas disabled:opacity-60"
+                    disabled={resolving}
+                    onClick={resolveAlert}
+                  >
+                    {resolving ? 'Resolving…' : 'Resolve'}
+                  </button>
+                ) : null}
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">{alert.title || 'Untitled alert'}</h1>

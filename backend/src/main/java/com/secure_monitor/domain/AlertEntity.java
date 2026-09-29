@@ -88,6 +88,10 @@ public class AlertEntity {
         return status;
     }
 
+    public void setStatus(AlertStatus status) {
+        this.status = status;
+    }
+
     public String getTitle() {
         return title;
     }

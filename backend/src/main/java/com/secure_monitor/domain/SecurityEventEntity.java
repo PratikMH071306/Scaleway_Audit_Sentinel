@@ -1,5 +1,6 @@
 package com.secure_monitor.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -112,6 +113,7 @@ public class SecurityEventEntity {
         return requestId;
     }
 
+    @JsonIgnore
     public Map<String, Object> getRequestBody() {
         return requestBody;
     }
