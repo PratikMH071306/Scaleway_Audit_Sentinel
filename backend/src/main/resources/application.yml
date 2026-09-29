@@ -1,3 +1,25 @@
+spring:
+  application:
+    name: secure-monitor
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  port: 8084
+
+scaleway:
+  secret-key: ${SCW_SECRET_KEY}
+  access-key: ${SCW_ACCESS_KEY}
+  organization-id: ${SCW_ORGANIZATION_ID}
+  region: ${SCW_REGION:fr-par}
+  event-lookback: P1D
+
 secure-monitor:
   cors:
     allowed-origins:
