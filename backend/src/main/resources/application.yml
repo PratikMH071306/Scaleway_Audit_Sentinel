@@ -31,5 +31,5 @@ security:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:3600}
   bootstrap:
-    username: ${BOOTSTRAP_ADMIN_USERNAME:admin}
+    username: ${BOOTSTRAP_ADMIN_USERNAME:}
     password: ${BOOTSTRAP_ADMIN_PASSWORD:}
