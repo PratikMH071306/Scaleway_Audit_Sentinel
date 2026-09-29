@@ -1,4 +1,4 @@
-# secure-monitor-ui
+# frontend
 
 Alert dashboard for the Secure Monitor API.
 
