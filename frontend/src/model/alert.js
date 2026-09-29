@@ -14,6 +14,8 @@ import { ApiError } from '../api/http.js'
  *   description: string,
  *   detectedAt: string,
  *   sourceIp: string,
+ *   organizationId: string,
+ *   username: string,
  *   eventCount: number,
  *   relatedEventIds: string[]
  * }} Alert
@@ -58,6 +60,8 @@ export function parseAlert(value) {
     description: typeof alert.description === 'string' ? alert.description : '',
     detectedAt: typeof alert.detectedAt === 'string' ? alert.detectedAt : '',
     sourceIp: typeof alert.sourceIp === 'string' ? alert.sourceIp : '',
+    organizationId: typeof alert.organizationId === 'string' ? alert.organizationId : '',
+    username: typeof alert.username === 'string' ? alert.username : '',
     eventCount: typeof alert.eventCount === 'number' ? alert.eventCount : 0,
     relatedEventIds: Array.isArray(alert.relatedEventIds)
       ? alert.relatedEventIds.filter((id) => typeof id === 'string')

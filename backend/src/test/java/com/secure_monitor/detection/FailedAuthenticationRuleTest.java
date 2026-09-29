@@ -12,185 +12,238 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class FailedAuthenticationRuleTest {
 
+    private static final String ORG = "e37c8fea-0284-4f90-bbfe-04666c7ecfd6";
+    private static final String USER = "test01";
+    private static final String IP = "103.147.161.45";
+
     private final FailedAuthenticationRule rule = new FailedAuthenticationRule();
 
     @Test
-    void detectsFiveFailedAuthenticationsFromTheSameSourceWithinFiveMinutes() {
-        Instant start = Instant.parse("2026-09-28T04:31:00Z");
+    void detectsFiveFailedPasswordLoginsForTheSameUserAndSourceWithinTenMinutes() {
+        Instant start = Instant.parse("2026-09-29T08:33:00Z");
         List<SecurityEventEntity> events = new ArrayList<>();
-        events.add(renewJwt("jwt-1", start.minusSeconds(30), "122.167.118.87"));
+        events.add(commitLogin("ok", start.minusSeconds(30), ORG, USER, IP));
         for (int minute = 0; minute < 5; minute++) {
-            events.add(failedAuthentication(
-                    "auth-" + minute,
-                    start.plusSeconds(minute * 60L),
-                    "122.167.118.87"
-            ));
+            events.add(failedPasswordLogin("fail-" + minute, start.plusSeconds(minute * 60L), ORG, USER, IP));
         }
-        events.add(otherFailure("create-1", start, "122.167.118.87", 400));
+        events.add(otherFailure("create-1", start, IP));
 
         List<DetectionResult> results = rule.evaluate(events);
 
-        assertThat(results).containsExactly(new DetectionResult(
-                true,
-                "FAILED_AUTHENTICATION_SPIKE",
-                "5 failed authentication attempts detected within 5 minutes",
+        assertThat(results).containsExactly(detected(
                 5,
-                "122.167.118.87",
                 start.plusSeconds(4 * 60L),
-                List.of("auth-0", "auth-1", "auth-2", "auth-3", "auth-4")
+                List.of("fail-0", "fail-1", "fail-2", "fail-3", "fail-4"),
+                false
         ));
     }
 
     @Test
-    void detectsEverySourceThatReachesTheThreshold() {
-        Instant start = Instant.parse("2026-09-28T04:31:00Z");
+    void raisesAStrongerSignalWhenTheSameUserLogsInSuccessfullyAfterward() {
+        Instant start = Instant.parse("2026-09-29T08:33:00Z");
         List<SecurityEventEntity> events = new ArrayList<>();
         for (int minute = 0; minute < 5; minute++) {
-            events.add(failedAuthentication("a-" + minute, start.plusSeconds(minute * 60L), "122.167.118.87"));
-            events.add(failedAuthentication("b-" + minute, start.plusSeconds(minute * 60L), "122.167.118.89"));
+            events.add(failedPasswordLogin("fail-" + minute, start.plusSeconds(minute * 60L), ORG, USER, IP));
         }
+        events.add(commitLogin("ok", start.plusSeconds(6 * 60L), ORG, USER, IP));
 
         List<DetectionResult> results = rule.evaluate(events);
 
-        assertThat(results).containsExactly(
-                new DetectionResult(
-                        true,
-                        "FAILED_AUTHENTICATION_SPIKE",
-                        "5 failed authentication attempts detected within 5 minutes",
-                        5,
-                        "122.167.118.87",
-                        start.plusSeconds(4 * 60L),
-                        List.of("a-0", "a-1", "a-2", "a-3", "a-4")
-                ),
-                new DetectionResult(
-                        true,
-                        "FAILED_AUTHENTICATION_SPIKE",
-                        "5 failed authentication attempts detected within 5 minutes",
-                        5,
-                        "122.167.118.89",
-                        start.plusSeconds(4 * 60L),
-                        List.of("b-0", "b-1", "b-2", "b-3", "b-4")
-                )
-        );
-    }
-
-    @Test
-    void reportsTheDenseWindowWhenTheThresholdIsNotMet() {
-        Instant start = Instant.parse("2026-09-28T04:31:00Z");
-
-        List<DetectionResult> results = rule.evaluate(List.of(
-                failedAuthentication("auth-1", start, "122.167.118.87"),
-                failedAuthentication("auth-2", start.plusSeconds(60), "122.167.118.87"),
-                renewJwt("jwt-1", start, "122.167.118.87")
-        ));
-
-        assertThat(results).containsExactly(new DetectionResult(
-                false,
-                "FAILED_AUTHENTICATION_SPIKE",
-                null,
-                2,
-                "122.167.118.87",
-                start.plusSeconds(60),
-                List.of("auth-1", "auth-2")
+        assertThat(results).containsExactly(detected(
+                5,
+                start.plusSeconds(4 * 60L),
+                List.of("fail-0", "fail-1", "fail-2", "fail-3", "fail-4", "ok"),
+                true
         ));
     }
 
     @Test
-    void doesNotCombineFailuresOutsideTheWindowOrFromAnotherSource() {
-        Instant start = Instant.parse("2026-09-28T04:31:00Z");
+    void keepsUsersOnTheSameSourceSeparate() {
+        Instant start = Instant.parse("2026-09-29T08:33:00Z");
         List<SecurityEventEntity> events = new ArrayList<>();
-        for (int minute = 0; minute < 4; minute++) {
-            events.add(failedAuthentication("a-" + minute, start.plusSeconds(minute * 60L), "122.167.118.87"));
-        }
-        events.add(failedAuthentication("late", start.plusSeconds(6 * 60L), "122.167.118.87"));
-        for (int minute = 0; minute < 4; minute++) {
-            events.add(failedAuthentication("b-" + minute, start.plusSeconds(minute * 60L), "203.0.113.10"));
+        for (int minute = 0; minute < 5; minute++) {
+            events.add(failedPasswordLogin("a-" + minute, start.plusSeconds(minute * 60L), ORG, "test01", IP));
+            events.add(failedPasswordLogin("b-" + minute, start.plusSeconds(minute * 60L), ORG, "test02", IP));
         }
 
         List<DetectionResult> results = rule.evaluate(events);
 
-        assertThat(results).extracting(DetectionResult::sourceIp).containsExactly("122.167.118.87", "203.0.113.10");
+        assertThat(results).extracting(DetectionResult::username).containsExactly("test01", "test02");
         assertThat(results).allSatisfy(result -> {
-            assertThat(result.detected()).isFalse();
-            assertThat(result.eventCount()).isEqualTo(4);
+            assertThat(result.detected()).isTrue();
+            assertThat(result.sourceIp()).isEqualTo(IP);
+            assertThat(result.eventCount()).isEqualTo(5);
         });
     }
 
     @Test
-    void ignoresAuthenticateCallsThatDidNotFail() {
-        Instant start = Instant.parse("2026-09-28T04:31:00Z");
+    void doesNotCombineFailuresOutsideTheWindowOrFromAnotherSource() {
+        Instant start = Instant.parse("2026-09-29T08:33:00Z");
+        List<SecurityEventEntity> events = new ArrayList<>();
+        for (int minute = 0; minute < 4; minute++) {
+            events.add(failedPasswordLogin("a-" + minute, start.plusSeconds(minute * 60L), ORG, USER, IP));
+        }
+        events.add(failedPasswordLogin("late", start.plusSeconds(11 * 60L), ORG, USER, IP));
+        for (int minute = 0; minute < 4; minute++) {
+            events.add(failedPasswordLogin("b-" + minute, start.plusSeconds(minute * 60L), ORG, USER, "203.0.113.10"));
+        }
+
+        List<DetectionResult> results = rule.evaluate(events);
+
+        assertThat(results).extracting(DetectionResult::sourceIp).containsExactly(IP, "203.0.113.10");
+        assertThat(results).allSatisfy(result -> {
+            assertThat(result.detected()).isFalse();
+            assertThat(result.eventCount()).isEqualTo(4);
+            assertThat(result.followedBySuccess()).isFalse();
+        });
+    }
+
+    @Test
+    void ignoresSuccessfulPasswordLoginsAndCommitLoginByItself() {
+        Instant start = Instant.parse("2026-09-29T08:42:17.944155805Z");
 
         List<DetectionResult> results = rule.evaluate(List.of(
-                authentication("ok-1", start, "122.167.118.87", 200, Map.of("result", "success")),
-                authentication("blank", start.plusSeconds(60), "122.167.118.87", 401, null)
+                passwordLogin("ok-password", start, ORG, USER, IP, 200),
+                commitLogin("ok-commit", start.plusSeconds(60), ORG, USER, IP)
         ));
 
         assertThat(results).isEmpty();
     }
 
-    private static SecurityEventEntity failedAuthentication(String id, Instant recordedAt, String sourceIp) {
-        return authentication(
-                id,
-                recordedAt,
-                sourceIp,
-                401,
-                Map.of("result", "failed", "reason", "invalid_password")
+    @Test
+    void doesNotTreatASuccessfulLoginForAnotherUserAsTheStrongerSignal() {
+        Instant start = Instant.parse("2026-09-29T08:33:00Z");
+        List<SecurityEventEntity> events = new ArrayList<>();
+        for (int minute = 0; minute < 5; minute++) {
+            events.add(failedPasswordLogin("fail-" + minute, start.plusSeconds(minute * 60L), ORG, USER, IP));
+        }
+        events.add(commitLogin("other-user", start.plusSeconds(6 * 60L), ORG, "test02", IP));
+
+        DetectionResult result = rule.evaluate(events).get(0);
+
+        assertThat(result.followedBySuccess()).isFalse();
+        assertThat(result.relatedEventIds()).doesNotContain("other-user");
+    }
+
+    private static DetectionResult detected(
+            int eventCount,
+            Instant detectedAt,
+            List<String> relatedEventIds,
+            boolean followedBySuccess
+    ) {
+        String description = eventCount
+                + " failed password login attempts for user "
+                + USER
+                + " from "
+                + IP
+                + " within 10 minutes";
+        if (followedBySuccess) {
+            description += ", followed by a successful login";
+        }
+        return new DetectionResult(
+                true,
+                "SUSPICIOUS_AUTHENTICATION",
+                description,
+                eventCount,
+                IP,
+                detectedAt,
+                relatedEventIds,
+                ORG,
+                USER,
+                followedBySuccess
         );
     }
 
-    private static SecurityEventEntity authentication(
+    private static SecurityEventEntity failedPasswordLogin(
             String id,
             Instant recordedAt,
+            String organizationId,
+            String username,
+            String sourceIp
+    ) {
+        return passwordLogin(id, recordedAt, organizationId, username, sourceIp, 401);
+    }
+
+    private static SecurityEventEntity passwordLogin(
+            String id,
+            Instant recordedAt,
+            String organizationId,
+            String username,
             String sourceIp,
+            int statusCode
+    ) {
+        return event(
+                id,
+                recordedAt,
+                organizationId,
+                sourceIp,
+                FailedAuthenticationRule.PASSWORD_LOGIN_METHOD,
+                Map.of("organization_id", organizationId, "password", "REDACTED", "username", username),
+                statusCode,
+                null
+        );
+    }
+
+    private static SecurityEventEntity commitLogin(
+            String id,
+            Instant recordedAt,
+            String organizationId,
+            String username,
+            String sourceIp
+    ) {
+        SecurityEventEntity event = event(
+                id,
+                recordedAt,
+                organizationId,
+                sourceIp,
+                FailedAuthenticationRule.COMMIT_LOGIN_METHOD,
+                Map.of("login_id", "e679c325-3973-4075-bfa3-b29ba815833a"),
+                200,
+                null
+        );
+        event.setResources(List.of(Map.of(
+                "id", "ead5aed3-1d91-4201-b388-98c2febfc404",
+                "type", "iam_user",
+                "name", username
+        )));
+        return event;
+    }
+
+    private static SecurityEventEntity otherFailure(String id, Instant recordedAt, String sourceIp) {
+        return event(
+                id,
+                recordedAt,
+                ORG,
+                sourceIp,
+                "CreateUser",
+                null,
+                400,
+                "scaleway.iam.v1alpha1.Api"
+        );
+    }
+
+    private static SecurityEventEntity event(
+            String id,
+            Instant recordedAt,
+            String organizationId,
+            String sourceIp,
+            String methodName,
+            Map<String, Object> requestBody,
             int statusCode,
-            Map<String, Object> requestBody
+            String serviceName
     ) {
         return new SecurityEventEntity(
                 id,
                 recordedAt,
-                "fr-par",
-                "org-1",
+                "global",
+                organizationId,
                 sourceIp,
-                "console",
-                FailedAuthenticationRule.AUTHENTICATION_SERVICE,
-                FailedAuthenticationRule.AUTHENTICATION_SERVICE,
-                "Authenticate",
+                "Mozilla/5.0",
+                "iam",
+                serviceName == null ? FailedAuthenticationRule.AUTHENTICATION_SERVICE : serviceName,
+                methodName,
                 "req-" + id,
                 requestBody,
-                statusCode
-        );
-    }
-
-    private static SecurityEventEntity renewJwt(String id, Instant recordedAt, String sourceIp) {
-        return new SecurityEventEntity(
-                id,
-                recordedAt,
-                "fr-par",
-                "org-1",
-                sourceIp,
-                "console",
-                FailedAuthenticationRule.AUTHENTICATION_SERVICE,
-                FailedAuthenticationRule.AUTHENTICATION_SERVICE,
-                "RenewJWT",
-                "req-" + id,
-                null,
-                200
-        );
-    }
-
-    private static SecurityEventEntity otherFailure(String id, Instant recordedAt, String sourceIp, int statusCode) {
-        return new SecurityEventEntity(
-                id,
-                recordedAt,
-                "fr-par",
-                "org-1",
-                sourceIp,
-                "console",
-                "scaleway.iam.v1alpha1.Api",
-                "scaleway.iam.v1alpha1.Api",
-                "CreateUser",
-                "req-" + id,
-                null,
                 statusCode
         );
     }

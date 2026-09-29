@@ -9,6 +9,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 @Entity
@@ -41,6 +42,10 @@ public class SecurityEventEntity {
     private Map<String, Object> requestBody;
 
     private int statusCode;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "resources")
+    private List<Map<String, Object>> resources;
 
     protected SecurityEventEntity() {
     }
@@ -120,5 +125,13 @@ public class SecurityEventEntity {
 
     public int getStatusCode() {
         return statusCode;
+    }
+
+    public List<Map<String, Object>> getResources() {
+        return resources;
+    }
+
+    public void setResources(List<Map<String, Object>> resources) {
+        this.resources = resources;
     }
 }

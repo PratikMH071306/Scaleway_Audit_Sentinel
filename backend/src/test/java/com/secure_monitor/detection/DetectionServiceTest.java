@@ -55,12 +55,15 @@ class DetectionServiceTest {
         );
         assertThat(results).containsExactly(new DetectionResult(
                 false,
-                "FAILED_AUTHENTICATION_SPIKE",
+                "SUSPICIOUS_AUTHENTICATION",
                 null,
                 1,
-                "122.167.118.87",
+                "103.147.161.45",
                 recordedAt,
-                List.of("auth-1")
+                List.of("auth-1"),
+                "org-1",
+                "test01",
+                false
         ));
         verify(alertService, never()).record(any());
     }
@@ -82,12 +85,15 @@ class DetectionServiceTest {
 
         verify(alertService).record(new DetectionResult(
                 true,
-                "FAILED_AUTHENTICATION_SPIKE",
-                "5 failed authentication attempts detected within 5 minutes",
+                "SUSPICIOUS_AUTHENTICATION",
+                "5 failed password login attempts for user test01 from 103.147.161.45 within 10 minutes",
                 5,
-                "122.167.118.87",
+                "103.147.161.45",
                 start.plusSeconds(4 * 60L),
-                List.of("auth-0", "auth-1", "auth-2", "auth-3", "auth-4")
+                List.of("auth-0", "auth-1", "auth-2", "auth-3", "auth-4"),
+                "org-1",
+                "test01",
+                false
         ));
     }
 
@@ -101,13 +107,13 @@ class DetectionServiceTest {
                 recordedAt,
                 "fr-par",
                 "org-1",
-                "122.167.118.87",
-                "console",
+                "103.147.161.45",
+                "Mozilla/5.0",
+                "iam",
                 FailedAuthenticationRule.AUTHENTICATION_SERVICE,
-                FailedAuthenticationRule.AUTHENTICATION_SERVICE,
-                "Authenticate",
+                "CreatePasswordLogin",
                 "req-1",
-                Map.of("result", "failed", "reason", "invalid_password"),
+                Map.of("username", "test01", "password", "REDACTED"),
                 401
         );
     }

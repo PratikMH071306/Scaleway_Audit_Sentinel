@@ -41,6 +41,10 @@ public class AlertEntity {
 
     private String sourceIp;
 
+    private String organizationId;
+
+    private String username;
+
     private int eventCount;
 
     @JdbcTypeCode(SqlTypes.JSON)
@@ -58,6 +62,8 @@ public class AlertEntity {
             String description,
             Instant detectedAt,
             String sourceIp,
+            String organizationId,
+            String username,
             int eventCount,
             List<String> relatedEventIds
     ) {
@@ -68,6 +74,8 @@ public class AlertEntity {
         this.description = description;
         this.detectedAt = detectedAt;
         this.sourceIp = sourceIp;
+        this.organizationId = organizationId;
+        this.username = username;
         this.eventCount = eventCount;
         this.relatedEventIds = relatedEventIds;
     }
@@ -106,6 +114,14 @@ public class AlertEntity {
 
     public String getSourceIp() {
         return sourceIp;
+    }
+
+    public String getOrganizationId() {
+        return organizationId;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public int getEventCount() {

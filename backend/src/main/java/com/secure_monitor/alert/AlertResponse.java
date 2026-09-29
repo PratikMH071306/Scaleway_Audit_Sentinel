@@ -15,6 +15,8 @@ public record AlertResponse(
         String description,
         Instant detectedAt,
         String sourceIp,
+        String organizationId,
+        String username,
         int eventCount,
         List<String> relatedEventIds
 ) {
@@ -28,6 +30,8 @@ public record AlertResponse(
                 entity.getDescription(),
                 entity.getDetectedAt(),
                 entity.getSourceIp(),
+                entity.getOrganizationId(),
+                entity.getUsername(),
                 entity.getEventCount(),
                 entity.getRelatedEventIds()
         );

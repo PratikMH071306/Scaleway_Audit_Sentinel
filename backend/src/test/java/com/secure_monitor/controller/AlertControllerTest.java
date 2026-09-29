@@ -37,13 +37,14 @@ class AlertControllerTest {
         mockMvc().perform(get("/api/alerts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(id.toString()))
-                .andExpect(jsonPath("$[0].rule").value("FAILED_AUTHENTICATION_SPIKE"))
+                .andExpect(jsonPath("$[0].rule").value("SUSPICIOUS_AUTHENTICATION"))
                 .andExpect(jsonPath("$[0].severity").value("HIGH"))
                 .andExpect(jsonPath("$[0].status").value("OPEN"))
-                .andExpect(jsonPath("$[0].title").value("Multiple failed authentication attempts"))
-                .andExpect(jsonPath("$[0].description").value("5 failed authentication attempts detected within 5 minutes"))
+                .andExpect(jsonPath("$[0].title").value("Suspicious authentication activity"))
+                .andExpect(jsonPath("$[0].description").value("5 failed password login attempts for user test01 from 122.167.118.87 within 10 minutes"))
                 .andExpect(jsonPath("$[0].detectedAt").value("2026-09-28T10:30:00Z"))
                 .andExpect(jsonPath("$[0].sourceIp").value("122.167.118.87"))
+                .andExpect(jsonPath("$[0].username").value("test01"))
                 .andExpect(jsonPath("$[0].eventCount").value(5))
                 .andExpect(jsonPath("$[0].relatedEventIds[0]").value("e1"));
     }
@@ -56,7 +57,8 @@ class AlertControllerTest {
         mockMvc().perform(get("/api/alerts/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id.toString()))
-                .andExpect(jsonPath("$.rule").value("FAILED_AUTHENTICATION_SPIKE"))
+                .andExpect(jsonPath("$.rule").value("SUSPICIOUS_AUTHENTICATION"))
+                .andExpect(jsonPath("$.username").value("test01"))
                 .andExpect(jsonPath("$.severity").value("HIGH"))
                 .andExpect(jsonPath("$.status").value("OPEN"))
                 .andExpect(jsonPath("$.sourceIp").value("122.167.118.87"))
@@ -81,13 +83,15 @@ class AlertControllerTest {
     private static AlertResponse sample(UUID id, String sourceIp) {
         return new AlertResponse(
                 id,
-                "FAILED_AUTHENTICATION_SPIKE",
+                "SUSPICIOUS_AUTHENTICATION",
                 AlertSeverity.HIGH,
                 AlertStatus.OPEN,
-                "Multiple failed authentication attempts",
-                "5 failed authentication attempts detected within 5 minutes",
+                "Suspicious authentication activity",
+                "5 failed password login attempts for user test01 from 122.167.118.87 within 10 minutes",
                 Instant.parse("2026-09-28T10:30:00Z"),
                 sourceIp,
+                "e37c8fea-0284-4f90-bbfe-04666c7ecfd6",
+                "test01",
                 5,
                 List.of("e1", "e2", "e3", "e4", "e5")
         );

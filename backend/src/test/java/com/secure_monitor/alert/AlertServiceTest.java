@@ -29,17 +29,22 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AlertServiceTest {
 
-    private static final String SOURCE_A = "122.167.118.87";
+    private static final String SOURCE_A = "103.147.161.45";
     private static final String SOURCE_B = "203.0.113.10";
+    private static final String ORG = "e37c8fea-0284-4f90-bbfe-04666c7ecfd6";
+    private static final String USER = "test01";
     private static final Instant DETECTED_AT = Instant.parse("2026-09-28T10:30:00Z");
+    private static final String DESCRIPTION = "5 failed password login attempts for user test01 from 103.147.161.45 within 10 minutes";
 
     @Mock
     private AlertRepository repository;
 
     @Test
     void createsOneOpenAlertFromADetection() {
-        when(repository.existsByRuleAndSourceIpAndStatus(
+        when(repository.existsByRuleAndOrganizationIdAndUsernameAndSourceIpAndStatus(
                 FailedAuthenticationRule.RULE_NAME,
+                ORG,
+                USER,
                 SOURCE_A,
                 AlertStatus.OPEN
         )).thenReturn(false);
@@ -54,10 +59,12 @@ class AlertServiceTest {
         assertThat(entity.getRule()).isEqualTo(FailedAuthenticationRule.RULE_NAME);
         assertThat(entity.getSeverity()).isEqualTo(AlertSeverity.HIGH);
         assertThat(entity.getStatus()).isEqualTo(AlertStatus.OPEN);
-        assertThat(entity.getTitle()).isEqualTo(AlertService.FAILED_AUTHENTICATION_TITLE);
-        assertThat(entity.getDescription()).isEqualTo("5 failed authentication attempts detected within 5 minutes");
+        assertThat(entity.getTitle()).isEqualTo(AlertService.SUSPICIOUS_AUTHENTICATION_TITLE);
+        assertThat(entity.getDescription()).isEqualTo(DESCRIPTION);
         assertThat(entity.getDetectedAt()).isEqualTo(DETECTED_AT);
         assertThat(entity.getSourceIp()).isEqualTo(SOURCE_A);
+        assertThat(entity.getOrganizationId()).isEqualTo(ORG);
+        assertThat(entity.getUsername()).isEqualTo(USER);
         assertThat(entity.getEventCount()).isEqualTo(5);
         assertThat(entity.getRelatedEventIds()).containsExactly("e1", "e2", "e3", "e4", "e5");
         assertThat(response.status()).isEqualTo(AlertStatus.OPEN);
@@ -67,17 +74,21 @@ class AlertServiceTest {
     @Test
     void doesNotCreateADuplicateWhileTheSameSourceStaysOpen() {
         UUID existingId = UUID.fromString("8e5c0000-0000-4000-8000-000000000001");
-        when(repository.existsByRuleAndSourceIpAndStatus(
+        when(repository.existsByRuleAndOrganizationIdAndUsernameAndSourceIpAndStatus(
                 FailedAuthenticationRule.RULE_NAME,
+                ORG,
+                USER,
                 SOURCE_A,
                 AlertStatus.OPEN
         )).thenReturn(false, true);
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(repository.findFirstByRuleAndSourceIpAndStatus(
+        when(repository.findFirstByRuleAndOrganizationIdAndUsernameAndSourceIpAndStatus(
                 FailedAuthenticationRule.RULE_NAME,
+                ORG,
+                USER,
                 SOURCE_A,
                 AlertStatus.OPEN
-        )).thenReturn(Optional.of(openAlert(existingId, SOURCE_A)));
+        )).thenReturn(Optional.of(openAlert(existingId, SOURCE_A, USER)));
 
         AlertService service = new AlertService(repository);
         service.record(spike(SOURCE_A));
@@ -90,16 +101,20 @@ class AlertServiceTest {
 
     @Test
     void createsASeparateAlertForEachSource() {
-        when(repository.existsByRuleAndSourceIpAndStatus(any(), any(), any())).thenReturn(false);
+        when(repository.existsByRuleAndOrganizationIdAndUsernameAndSourceIpAndStatus(
+                any(), any(), any(), any(), any()
+        )).thenReturn(false);
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         AlertService service = new AlertService(repository);
-        service.record(spike(SOURCE_A));
-        service.record(spike(SOURCE_B));
+        service.record(spike(SOURCE_A, USER));
+        service.record(spike(SOURCE_B, USER));
+        service.record(spike(SOURCE_A, "test02"));
 
         ArgumentCaptor<AlertEntity> saved = ArgumentCaptor.forClass(AlertEntity.class);
-        verify(repository, times(2)).save(saved.capture());
-        assertThat(saved.getAllValues()).extracting(AlertEntity::getSourceIp).containsExactly(SOURCE_A, SOURCE_B);
+        verify(repository, times(3)).save(saved.capture());
+        assertThat(saved.getAllValues()).extracting(AlertEntity::getSourceIp).containsExactly(SOURCE_A, SOURCE_B, SOURCE_A);
+        assertThat(saved.getAllValues()).extracting(AlertEntity::getUsername).containsExactly(USER, USER, "test02");
         assertThat(saved.getAllValues()).allSatisfy(entity -> assertThat(entity.getStatus()).isEqualTo(AlertStatus.OPEN));
     }
 
@@ -114,7 +129,10 @@ class AlertServiceTest {
                 2,
                 SOURCE_A,
                 DETECTED_AT,
-                List.of("e1", "e2")
+                List.of("e1", "e2"),
+                ORG,
+                USER,
+                false
         ))).isInstanceOf(IllegalArgumentException.class);
 
         verify(repository, never()).save(any());
@@ -134,21 +152,28 @@ class AlertServiceTest {
     }
 
     private static DetectionResult spike(String sourceIp) {
+        return spike(sourceIp, USER);
+    }
+
+    private static DetectionResult spike(String sourceIp, String username) {
         return new DetectionResult(
                 true,
                 FailedAuthenticationRule.RULE_NAME,
-                "5 failed authentication attempts detected within 5 minutes",
+                DESCRIPTION,
                 5,
                 sourceIp,
                 DETECTED_AT,
-                List.of("e1", "e2", "e3", "e4", "e5")
+                List.of("e1", "e2", "e3", "e4", "e5"),
+                ORG,
+                username,
+                false
         );
     }
 
     @Test
     void marksAnOpenAlertResolved() {
         UUID id = UUID.fromString("8e5c0000-0000-4000-8000-000000000001");
-        AlertEntity entity = openAlert(id, SOURCE_A);
+        AlertEntity entity = openAlert(id, SOURCE_A, USER);
         when(repository.findById(id)).thenReturn(Optional.of(entity));
         when(repository.save(entity)).thenReturn(entity);
 
@@ -158,15 +183,17 @@ class AlertServiceTest {
         assertThat(entity.getStatus()).isEqualTo(AlertStatus.RESOLVED);
     }
 
-    private static AlertEntity openAlert(UUID id, String sourceIp) {
+    private static AlertEntity openAlert(UUID id, String sourceIp, String username) {
         AlertEntity entity = new AlertEntity(
                 FailedAuthenticationRule.RULE_NAME,
                 AlertSeverity.HIGH,
                 AlertStatus.OPEN,
-                AlertService.FAILED_AUTHENTICATION_TITLE,
-                "5 failed authentication attempts detected within 5 minutes",
+                AlertService.SUSPICIOUS_AUTHENTICATION_TITLE,
+                DESCRIPTION,
                 DETECTED_AT,
                 sourceIp,
+                ORG,
+                username,
                 5,
                 List.of("e1", "e2", "e3", "e4", "e5")
         );

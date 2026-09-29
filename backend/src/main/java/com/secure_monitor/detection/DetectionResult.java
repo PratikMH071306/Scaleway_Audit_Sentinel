@@ -13,6 +13,9 @@ public record DetectionResult(
         int eventCount,
         String sourceIp,
         Instant detectedAt,
-        List<String> relatedEventIds
+        List<String> relatedEventIds,
+        String organizationId,
+        String username,
+        boolean followedBySuccess
 ) {
 }

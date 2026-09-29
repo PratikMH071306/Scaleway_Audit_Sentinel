@@ -15,7 +15,7 @@ import java.util.UUID;
 @Service
 public class AlertService {
 
-    static final String FAILED_AUTHENTICATION_TITLE = "Multiple failed authentication attempts";
+    static final String SUSPICIOUS_AUTHENTICATION_TITLE = "Suspicious authentication activity";
 
     private final AlertRepository repository;
 
@@ -27,8 +27,20 @@ public class AlertService {
         if (!result.detected()) {
             throw new IllegalArgumentException("A detection is required to create an alert");
         }
-        if (repository.existsByRuleAndSourceIpAndStatus(result.rule(), result.sourceIp(), AlertStatus.OPEN)) {
-            return repository.findFirstByRuleAndSourceIpAndStatus(result.rule(), result.sourceIp(), AlertStatus.OPEN)
+        if (repository.existsByRuleAndOrganizationIdAndUsernameAndSourceIpAndStatus(
+                result.rule(),
+                result.organizationId(),
+                result.username(),
+                result.sourceIp(),
+                AlertStatus.OPEN
+        )) {
+            return repository.findFirstByRuleAndOrganizationIdAndUsernameAndSourceIpAndStatus(
+                            result.rule(),
+                            result.organizationId(),
+                            result.username(),
+                            result.sourceIp(),
+                            AlertStatus.OPEN
+                    )
                     .map(AlertResponse::from)
                     .orElseThrow();
         }
@@ -59,12 +71,14 @@ public class AlertService {
     private static AlertEntity toEntity(DetectionResult result) {
         return new AlertEntity(
                 result.rule(),
-                severityFor(result.rule()),
+                severityFor(result),
                 AlertStatus.OPEN,
                 titleFor(result.rule()),
                 result.description(),
                 result.detectedAt(),
                 result.sourceIp(),
+                result.organizationId(),
+                result.username(),
                 result.eventCount(),
                 result.relatedEventIds() == null ? List.of() : List.copyOf(result.relatedEventIds())
         );
@@ -77,9 +91,16 @@ public class AlertService {
         return AlertSeverity.MEDIUM;
     }
 
+    private static AlertSeverity severityFor(DetectionResult result) {
+        if (FailedAuthenticationRule.RULE_NAME.equals(result.rule()) && result.followedBySuccess()) {
+            return AlertSeverity.CRITICAL;
+        }
+        return severityFor(result.rule());
+    }
+
     private static String titleFor(String rule) {
         if (FailedAuthenticationRule.RULE_NAME.equals(rule)) {
-            return FAILED_AUTHENTICATION_TITLE;
+            return SUSPICIOUS_AUTHENTICATION_TITLE;
         }
         return rule;
     }

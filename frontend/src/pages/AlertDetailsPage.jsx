@@ -73,7 +73,9 @@ export default function AlertDetailsPage() {
 
             <dl className="grid gap-4 px-5 py-5 sm:grid-cols-2">
               <Detail label="Rule" value={alert.rule || 'Unknown'} mono />
+              <Detail label="User" value={alert.username || 'Unknown'} />
               <Detail label="Source IP" value={alert.sourceIp || 'Unknown'} mono />
+              <Detail label="Organization" value={alert.organizationId || 'Unknown'} mono />
               <Detail label="Detected at" value={formatAbsoluteTime(alert.detectedAt)} />
               <Detail label="Event count" value={String(alert.eventCount)} />
               <Detail label="Alert ID" value={alert.id} mono />

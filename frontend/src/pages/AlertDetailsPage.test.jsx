@@ -27,6 +27,7 @@ describe('AlertDetailsPage', () => {
     expect(screen.getByText(payload.description)).toBeInTheDocument()
     expect(screen.getByText('HIGH')).toBeInTheDocument()
     expect(screen.getByText(payload.sourceIp)).toBeInTheDocument()
+    expect(screen.getByText(payload.username)).toBeInTheDocument()
     expect(screen.getByText(payload.rule)).toBeInTheDocument()
     for (const eventId of payload.relatedEventIds) {
       expect(screen.getByText(eventId)).toBeInTheDocument()
@@ -46,7 +47,7 @@ describe('AlertDetailsPage', () => {
     renderDetails('missing')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('The requested alert was not found.')
-    expect(screen.queryByRole('heading', { name: 'Multiple failed authentication attempts' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Suspicious authentication activity' })).not.toBeInTheDocument()
   })
 
   it('shows a network failure and can retry', async () => {

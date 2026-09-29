@@ -9,7 +9,19 @@ import java.util.UUID;
 
 public interface AlertRepository extends JpaRepository<AlertEntity, UUID> {
 
-    boolean existsByRuleAndSourceIpAndStatus(String rule, String sourceIp, AlertStatus status);
+    boolean existsByRuleAndOrganizationIdAndUsernameAndSourceIpAndStatus(
+            String rule,
+            String organizationId,
+            String username,
+            String sourceIp,
+            AlertStatus status
+    );
 
-    Optional<AlertEntity> findFirstByRuleAndSourceIpAndStatus(String rule, String sourceIp, AlertStatus status);
+    Optional<AlertEntity> findFirstByRuleAndOrganizationIdAndUsernameAndSourceIpAndStatus(
+            String rule,
+            String organizationId,
+            String username,
+            String sourceIp,
+            AlertStatus status
+    );
 }

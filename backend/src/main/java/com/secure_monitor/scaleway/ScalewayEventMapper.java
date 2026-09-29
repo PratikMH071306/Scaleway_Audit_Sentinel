@@ -6,7 +6,9 @@ import com.secure_monitor.scaleway.dto.AuditEventDto;
 import com.secure_monitor.scaleway.dto.ResourceDto;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -26,7 +28,7 @@ public class ScalewayEventMapper {
     }
 
     public SecurityEventEntity toEntity(AuditEventDto event) {
-        return new SecurityEventEntity(
+        SecurityEventEntity entity = new SecurityEventEntity(
                 event.id(),
                 event.recordedAt(),
                 event.locality(),
@@ -40,6 +42,8 @@ public class ScalewayEventMapper {
                 event.requestBody(),
                 event.statusCode()
         );
+        entity.setResources(resourceMaps(event.resources()));
+        return entity;
     }
 
     private static String principalId(AuditEventDto event) {
@@ -70,6 +74,24 @@ public class ScalewayEventMapper {
                 .filter(item -> !isBlank(item))
                 .collect(Collectors.joining(", "));
         return value.isBlank() ? null : value;
+    }
+
+    private static List<Map<String, Object>> resourceMaps(List<ResourceDto> resources) {
+        if (resources == null || resources.isEmpty()) {
+            return List.of();
+        }
+        return resources.stream()
+                .filter(resource -> resource != null)
+                .map(ScalewayEventMapper::resourceMap)
+                .toList();
+    }
+
+    private static Map<String, Object> resourceMap(ResourceDto resource) {
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put("id", resource.id());
+        values.put("type", resource.type());
+        values.put("name", resource.name());
+        return values;
     }
 
     private static String formatResource(ResourceDto resource) {

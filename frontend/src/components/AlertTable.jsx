@@ -16,6 +16,7 @@ export default function AlertTable({ alerts }) {
             <th scope="col" className="px-4 py-3 font-medium">Severity</th>
             <th scope="col" className="px-4 py-3 font-medium">Rule</th>
             <th scope="col" className="px-4 py-3 font-medium">Title</th>
+            <th scope="col" className="px-4 py-3 font-medium">User</th>
             <th scope="col" className="px-4 py-3 font-medium">Source IP</th>
             <th scope="col" className="px-4 py-3 font-medium">Detected at</th>
             <th scope="col" className="px-4 py-3 font-medium">Status</th>
@@ -36,6 +37,7 @@ export default function AlertTable({ alerts }) {
                   {alert.title || 'Untitled alert'}
                 </Link>
               </td>
+              <td data-label="User" className="px-4 py-3">{alert.username || 'Unknown'}</td>
               <td data-label="Source IP" className="px-4 py-3 font-mono text-xs">{alert.sourceIp || 'Unknown'}</td>
               <td data-label="Detected at" className="px-4 py-3">
                 <time dateTime={alert.detectedAt} title={formatAbsoluteTime(alert.detectedAt)}>
