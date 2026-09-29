@@ -71,7 +71,7 @@ describe('AlertDetailsPage', () => {
     expect(screen.getByRole('dialog')).toHaveTextContent(payload.scalewayUserId)
     expect(apiPost).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Confirm Lock' }))
-    expect(apiPost).toHaveBeenCalledWith(`/api/alerts/${payload.id}/remediate`, { action: 'LOCK_USER' })
+    expect(apiPost).toHaveBeenCalledWith(`/api/alerts/${payload.id}/remediate`, { action: 'LOCK_USER' }, { logoutOnUnauthorized: false })
     expect(await screen.findByText('User locked successfully')).toBeInTheDocument()
   })
 
@@ -86,7 +86,7 @@ describe('AlertDetailsPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Unlock User' }))
     expect(screen.getByRole('dialog')).toHaveTextContent('Unlock user?')
     await user.click(screen.getByRole('button', { name: 'Confirm Unlock' }))
-    expect(apiPost).toHaveBeenCalledWith(`/api/alerts/${payload.id}/remediate`, { action: 'UNLOCK_USER' })
+    expect(apiPost).toHaveBeenCalledWith(`/api/alerts/${payload.id}/remediate`, { action: 'UNLOCK_USER' }, { logoutOnUnauthorized: false })
     expect(await screen.findByText('User unlocked successfully')).toBeInTheDocument()
   })
 

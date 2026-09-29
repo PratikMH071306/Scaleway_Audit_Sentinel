@@ -28,7 +28,7 @@ export default function AlertDetailsPage() {
       return undefined
     }
     let cancelled = false
-    apiGet(`/api/alerts/${id}/remediations`)
+    apiGet(`/api/alerts/${id}/remediations`, { logoutOnUnauthorized: false })
       .then((payload) => {
         if (!cancelled) {
           setHistory(Array.isArray(payload) ? payload : [])
@@ -49,21 +49,22 @@ export default function AlertDetailsPage() {
     setActionError('')
     setActing(true)
     try {
-      const result = await apiPost(`/api/alerts/${id}/remediate`, { action })
+      const result = await apiPost(`/api/alerts/${id}/remediate`, { action }, { logoutOnUnauthorized: false })
       setLockMessage(result?.message || (action === 'UNLOCK_USER' ? 'User unlocked successfully' : 'User locked successfully'))
       if (result?.status === 'SUCCESS') {
         setLockedNow(result.afterLocked === true)
       }
       setPendingAction('')
-      try {
-        await refresh()
+      const reloaded = await refresh({ logoutOnUnauthorized: false, quiet: true })
+      if (reloaded) {
         setLockedNow(null)
-      } catch {
-        // Keep the button on the action that just succeeded.
       }
     } catch (cause) {
-      setActionError(errorMessage(cause))
       setPendingAction('')
+      const reloaded = await refresh({ logoutOnUnauthorized: false, quiet: true })
+      if (!reloaded) {
+        setActionError(errorMessage(cause))
+      }
     } finally {
       setActing(false)
     }

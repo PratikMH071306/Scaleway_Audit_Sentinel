@@ -8,6 +8,6 @@ export function getAlerts() {
 /**
  * @param {string} id
  */
-export function getAlertById(id) {
-  return apiGet(`/api/alerts/${encodeURIComponent(id)}`).then(parseAlert)
+export function getAlertById(id, options) {
+  return apiGet(`/api/alerts/${encodeURIComponent(id)}`, options).then(parseAlert)
 }

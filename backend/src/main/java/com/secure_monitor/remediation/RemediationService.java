@@ -63,7 +63,12 @@ public class RemediationService {
             );
         }
 
-        ScalewayUserDto before = iamClient.getUser(alert.getScalewayUserId());
+        ScalewayUserDto before;
+        try {
+            before = iamClient.getUser(alert.getScalewayUserId());
+        } catch (ScalewayApiException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, exception.getSafeMessage());
+        }
         boolean lock = request.action() == RemediationAction.LOCK_USER;
         RemediationEntity entity = new RemediationEntity(
                 alert.getId(),

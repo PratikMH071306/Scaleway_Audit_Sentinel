@@ -18,7 +18,7 @@ export function useAlert(id) {
     setLoading(true)
   }
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (requestOptions) => {
     if (!id) {
       setAlert(null)
       setError('The requested alert was not found.')
@@ -28,11 +28,15 @@ export function useAlert(id) {
 
     setLoading(true)
     try {
-      setAlert(await getAlertById(id))
+      setAlert(await getAlertById(id, requestOptions))
       setError(null)
+      return true
     } catch (cause) {
-      setError(errorMessage(cause))
+      if (!requestOptions?.quiet) {
+        setError(errorMessage(cause))
+      }
       setAlert((current) => (current?.id === id ? current : null))
+      return false
     } finally {
       setLoading(false)
     }
