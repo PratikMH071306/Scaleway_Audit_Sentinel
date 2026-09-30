@@ -35,3 +35,5 @@ build/
 
 # Local Spring config that may contain secrets. The committed application.yml only references environment variables.
 application-local.yml
+
+.env

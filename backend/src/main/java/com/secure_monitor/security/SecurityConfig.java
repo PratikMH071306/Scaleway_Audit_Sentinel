@@ -38,7 +38,7 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, accessDeniedException) ->
                                 writeError(response, HttpStatus.FORBIDDEN, "You do not have permission to perform this action")))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
                         .requestMatchers("/api/alerts/**", "/api/security/**").authenticated()
                         .anyRequest().authenticated())
